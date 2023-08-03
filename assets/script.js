@@ -4,15 +4,23 @@ console.log('Script loaded');
 let source = null;
 
 window.onload = () => {
-    const chatUser = `user-${Math.random().toString(36).substring(7)}`;
-    document.getElementById("userName").innerHTML = chatUser;
+    document.getElementById("userName").innerHTML = `user-${Math.random().toString(36).substring(7)}`;
 
     if (source) loadUsers();
 }
 
 const sendMsg = () => {
     const input = document.getElementById('msg');
-    fetch('/api/chat/message', { method: "POST", credentials: 'include', headers: { "content-type": "application/json" }, body : JSON.stringify({ msg: input.value }) })
+    fetch('/api/chat/message', {
+        method: "POST",
+        credentials: 'include',
+        headers: { "content-type": "application/json" },
+        body : JSON.stringify(
+            {
+                sender: `${document.getElementById("userName").innerHTML}`,
+                msg: input.value
+            })
+    })
         .catch(err => console.log(err))
     document.getElementById('msg').value = '';
 }

@@ -1,7 +1,7 @@
 package router
 
 import (
-	"game-server/service"
+	"game-server/api"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,14 +14,14 @@ func InitRouter() *gin.Engine {
 	//	c.Redirect(http.StatusMovedPermanently, "/")
 	//})
 
-	chatService := service.ChatService()
+	//chatService := service.ChatService()
 
 	root := r.Group("/api")
 	{
 		chat := root.Group("/chat")
 		{
-			chat.GET("/register", chatService.JoinUser)
-			chat.POST("/message", chatService.BroadcastMessage)
+			chat.GET("/register", api.EnterChat)
+			chat.POST("/message", api.SendMessage)
 		}
 	}
 	return r
