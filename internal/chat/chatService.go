@@ -1,4 +1,4 @@
-package service
+package chat
 
 import (
 	"log"
@@ -10,7 +10,13 @@ type Message struct {
 	Msg    string `json:"msg"`
 }
 
-type ChatRoom struct {
+type IChatRoom interface {
+	JoinRoom() chan string
+	ExitRoom(chan string)
+	SendMessage(string)
+}
+
+type Room struct {
 	// Events are pushed to this channel by the main events-gathering routine
 	Message chan string
 
@@ -26,56 +32,58 @@ type ChatRoom struct {
 
 type ClientChan chan string
 
-var chatRoom *ChatRoom
+//var room *Room
 
-func init() {
-	chatRoom = &ChatRoom{
+func Init() (room *Room) {
+	room = &Room{
 		Message:       make(chan string),
 		NewClients:    make(chan chan string),
 		ClosedClients: make(chan chan string),
 		TotalClients:  make(map[chan string]bool),
 	}
 
-	go listen()
+	go room.listen()
+
+	return
 }
 
 // It Listens all incoming requests from clients.
 // Handles addition and removal of clients and broadcast messages to clients.
-func listen() {
+func (room *Room) listen() {
 	for {
 		select {
 		// Add new available client
-		case client := <-chatRoom.NewClients:
-			chatRoom.TotalClients[client] = true
-			log.Printf("Client added. %d registered clients", len(chatRoom.TotalClients))
+		case client := <-room.NewClients:
+			room.TotalClients[client] = true
+			log.Printf("Client added. %d registered clients", len(room.TotalClients))
 
 		// Remove closed client
-		case client := <-chatRoom.ClosedClients:
-			delete(chatRoom.TotalClients, client)
+		case client := <-room.ClosedClients:
+			delete(room.TotalClients, client)
 			close(client)
-			log.Printf("Removed client. %d registered clients", len(chatRoom.TotalClients))
+			log.Printf("Removed client. %d registered clients", len(room.TotalClients))
 
 		// Broadcast message to client
-		case eventMsg := <-chatRoom.Message:
+		case eventMsg := <-room.Message:
 			log.Printf("BroadCast Message to client. %s", eventMsg)
-			for clientMessageChan := range chatRoom.TotalClients {
+			for clientMessageChan := range room.TotalClients {
 				clientMessageChan <- eventMsg
 			}
 		}
 	}
 }
 
-func JoinRoom() chan string {
+func (room *Room) JoinRoom() chan string {
 	clientChan := make(ClientChan)
-	chatRoom.NewClients <- clientChan
+	room.NewClients <- clientChan
 
 	return clientChan
 }
 
-func ExitRoom(clientChan chan string) {
-	chatRoom.ClosedClients <- clientChan
+func (room *Room) ExitRoom(clientChan chan string) {
+	room.ClosedClients <- clientChan
 }
 
-func SendMessage(msg string) {
-	chatRoom.Message <- msg
+func (room *Room) SendMessage(msg string) {
+	room.Message <- msg
 }

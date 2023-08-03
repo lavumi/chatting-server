@@ -4,8 +4,7 @@ FROM alpine:latest
 WORKDIR /
 
 # Copies everything from your root directory into /app
-ADD ./assets ./assets
-ADD ./view ./view
+ADD ./web ./web
 COPY ./game-server ./
 
 # Tells Docker which network port your container listens on

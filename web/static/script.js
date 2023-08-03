@@ -27,8 +27,12 @@ const sendMsg = () => {
 
 const loadUsers = () => {
     fetch('/api/chat/users')
-        .then(response => response.json())
+        .then(response => {
+            console.log("response : " + JSON.stringify(response));
+            return response.json()
+        })
         .then(json => {
+            console.log("json " + JSON.stringify(json))
             document.getElementById("userList").innerHTML = json.userList[0] ? json.userList.join('<br>') : 'No user';
         });
 }
@@ -65,4 +69,5 @@ const enterChat = () => {
         console.log('sse oper', e.data)
     }, false);
 
+    loadUsers();
 }
