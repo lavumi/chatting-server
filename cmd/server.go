@@ -11,7 +11,7 @@ func main() {
 
 	//r := gin.Default()
 	r.Static("/assets", "./assets")
-	r.LoadHTMLGlob("webpage/*")
+	r.LoadHTMLGlob("view/*")
 	r.GET("/", func(c *gin.Context) {
 		//if pusher := c.Writer.Pusher(); pusher != nil {
 		//	if err := pusher.Push("/assets/script.js", nil); err != nil {
