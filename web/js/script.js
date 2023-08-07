@@ -57,6 +57,64 @@ const quitChat = () => {
     document.getElementById('chat').innerHTML = '';
 }
 
+const addChatBoxBootstrap = (username, chatData) => {
+    const chatCard = document.createElement("div");
+    chatCard.className = "row m-3";
+    const nameCard = document.createElement("div")
+    nameCard.className = "col-sm-4 p-3 text-right";
+    nameCard.innerHTML = chatData.sender;
+
+
+    const messageCard = document.createElement("div")
+    messageCard.className = "col-sm-8 card";
+    const msgBody = document.createElement("div");
+    msgBody.className = "card-body";
+    msgBody.innerHTML = chatData.msg;
+    messageCard.appendChild(msgBody);
+
+
+    if (chatData.sender === username) {
+        // nameCard.className += " text-right";
+        nameCard.style.textAlign = "right";
+        chatCard.appendChild(messageCard);
+        chatCard.appendChild(nameCard);
+    } else {
+        chatCard.appendChild(nameCard);
+        chatCard.appendChild(messageCard);
+    }
+
+    return chatCard;
+}
+
+const addChatBoxMaterialize = (username, chatData) => {
+    const chatCard = document.createElement("div");
+    chatCard.className = "row m-3";
+    const nameCard = document.createElement("div")
+    nameCard.className = "col s4 p-3";
+    nameCard.innerHTML = chatData.sender;
+
+
+    const messageCard = document.createElement("div")
+    messageCard.className = "col s8 card";
+    const msgBody = document.createElement("div");
+    msgBody.className = "card-content";
+    msgBody.innerHTML = chatData.msg;
+    messageCard.appendChild(msgBody);
+
+
+    if (chatData.sender === username) {
+        // nameCard.className += " text-right";
+        nameCard.className += " right-align";
+        chatCard.appendChild(messageCard);
+        chatCard.appendChild(nameCard);
+    } else {
+        chatCard.appendChild(nameCard);
+        chatCard.appendChild(messageCard);
+    }
+
+    return chatCard;
+}
+
 const enterChat = () => {
     console.log('start sse')
 
@@ -75,31 +133,8 @@ const enterChat = () => {
         // console.log('sse info', e.data)
         let chatData = JSON.parse(e.data);
 
+        let chatCard = addChatBoxMaterialize(username, chatData);
 
-        const chatCard = document.createElement("div");
-        chatCard.className = "row m-3";
-        const nameCard = document.createElement("div")
-        nameCard.className = "col-sm-4 p-3 text-right";
-        nameCard.innerHTML = chatData.sender;
-
-
-        const messageCard = document.createElement("div")
-        messageCard.className = "col-sm-8 card";
-        const msgBody = document.createElement("div");
-        msgBody.className = "card-body";
-        msgBody.innerHTML = chatData.msg;
-        messageCard.appendChild(msgBody);
-
-
-        if (chatData.sender === username) {
-            // nameCard.className += " text-right";
-            nameCard.style.textAlign = "right";
-            chatCard.appendChild(messageCard);
-            chatCard.appendChild(nameCard);
-        } else {
-            chatCard.appendChild(nameCard);
-            chatCard.appendChild(messageCard);
-        }
 
 
         chat.appendChild(chatCard);
