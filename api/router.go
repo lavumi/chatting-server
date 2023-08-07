@@ -11,12 +11,7 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
-	//r.NoRoute(func(c *gin.Context) {
-	//	c.Redirect(http.StatusMovedPermanently, "/")
-	//})
-
 	chatService := chat.Init()
-
 	root := r.Group("/api")
 	{
 		chatRouter := root.Group("/chat")

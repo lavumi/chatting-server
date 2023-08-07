@@ -11,9 +11,10 @@ type Message struct {
 }
 
 type IChatRoom interface {
-	JoinRoom() chan string
+	JoinRoom(string) chan string
 	ExitRoom(chan string)
 	SendMessage(string)
+	GetMembers() []string
 }
 
 type Room struct {
@@ -28,6 +29,10 @@ type Room struct {
 
 	// Total client connections
 	TotalClients map[chan string]bool
+
+	FullMessages []string
+
+	User []string
 }
 
 type ClientChan chan string
@@ -40,6 +45,8 @@ func Init() (room *Room) {
 		NewClients:    make(chan chan string),
 		ClosedClients: make(chan chan string),
 		TotalClients:  make(map[chan string]bool),
+		FullMessages:  make([]string, 0),
+		User:          make([]string, 0),
 	}
 
 	go room.listen()
@@ -73,8 +80,9 @@ func (room *Room) listen() {
 	}
 }
 
-func (room *Room) JoinRoom() chan string {
+func (room *Room) JoinRoom(user string) chan string {
 	clientChan := make(ClientChan)
+	//clientChan <- user
 	room.NewClients <- clientChan
 
 	return clientChan
@@ -86,4 +94,9 @@ func (room *Room) ExitRoom(clientChan chan string) {
 
 func (room *Room) SendMessage(msg string) {
 	room.Message <- msg
+}
+
+func (room *Room) GetMembers() []string {
+
+	return []string{""}
 }
