@@ -66,10 +66,10 @@ func SendMessage(room *chat.Service) gin.HandlerFunc {
 
 func GetRoomList(room *chat.Service) gin.HandlerFunc {
 
-	roomList := room.GetRoomList()
+	//roomList := room.GetRoomList()
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"userList": roomList,
+			"roomList": []string{"123", "chat", "test"},
 		})
 	}
 }

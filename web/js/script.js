@@ -2,7 +2,7 @@
 
 let source = null;
 
-
+const roomUri ="/api/chat/rooms";
 const enterUri = "/api/chat/123/enter";
 const msgUri = "/api/chat/123/message";
 const userUri = "/api/chat/123/user";
@@ -57,7 +57,7 @@ const sendMsg = () => {
 const loadUsers = () => {
     fetch(userUri)
         .then(response => {
-            console.log("response : " + JSON.stringify(response));
+            // console.log("response : " + JSON.stringify(response));
             return response.json()
         })
         .then(json => {
@@ -73,10 +73,11 @@ const loadUsers = () => {
 const quitChat = () => {
     source.close();
     source = null;
-    console.log('Chat closed');
+    // console.log('Chat closed');
     checkLoginStatus();
     resetChatting();
     resetUserList();
+    toggleRoom();
 }
 const resetChatting = () => {
     const myNode = document.getElementById("chat-list");
@@ -92,8 +93,7 @@ const resetUserList = () => {
 }
 
 let prev_sender = "";
-const enterChat = () => {
-    console.log('start sse')
+const enterChat = (roomId) => {
 
     // document.cookie = `user=${document.getElementById("userName").innerHTML}`;
 
@@ -102,7 +102,7 @@ const enterChat = () => {
         return;
     }
 
-    source = new EventSource(enterUri, {
+    source = new EventSource(`/api/chat/${roomId}/enter`, {
         headers: {
             'Authorization': 'Bearer ' + "mytoken",
             'UserName': username
@@ -116,14 +116,8 @@ const enterChat = () => {
     source.addEventListener("info", (e) => {
         // console.log('sse info', e.data)
         let chatData = JSON.parse(e.data);
-
-        console.log(chatData);
-        console.log("username" + username);
-        console.log("prev_sender" + prev_sender);
         let myCard = chatData.sender === username;
 
-        console.log(myCard);
-        console.log(prev_sender !== chatData.sender);
 
         if (myCard === false && prev_sender !== chatData.sender) {
             let namePanel = document.createElement("div");
@@ -158,6 +152,25 @@ const enterChat = () => {
 
     checkLoginStatus();
     loadUsers();
+    toggleRoom();
+}
+
+const getRoomInfo = ()=>{
+    fetch(roomUri)
+        .then(response => {
+            // console.log("response : " + JSON.stringify(response.json()));
+            return response.json()
+        })
+        .then(json => {
+            for (let i = 0; i < json.roomList.length; i++) {
+                // const user = document.createElement("li")
+                // user.classList.add("collection-item");
+                // user.innerHTML = json.userList[i];
+                // userList.appendChild(user);
+                createCard(json.roomList[i] , "1/5");
+            }
+            checkLoginStatus();
+        });
 }
 
 function createCard(roomName, memberInfo) {
@@ -185,7 +198,8 @@ function createCard(roomName, memberInfo) {
 
 
     card.addEventListener("click", () => {
-        console.log(roomName + "clicked");
+        // console.log(roomName + "clicked");
+        enterChat(roomName);
     })
 
     cardCol.appendChild(card);

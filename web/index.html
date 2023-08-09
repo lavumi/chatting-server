@@ -52,7 +52,7 @@
                 </div>
             </li>
             <li style="margin: 0 10px;">
-                <button id="enter-chat-btn" type="button" class="btn waves-effect waves-light" onclick="enterChat()">
+                <button id="enter-chat-btn" type="button" class="btn waves-effect waves-light" onclick="getRoomInfo()">
                     Enter chat
                 </button>
             </li>
@@ -97,17 +97,6 @@
         </div>
     </div>
 </main>
-<script>
-    function toggleDivs() {
-        var topDiv = document.getElementById('room-div');
-        var bottomDiv = document.getElementById('chat-div');
-
-        topDiv.classList.toggle('expanded');
-        topDiv.classList.toggle('collapsed');
-        bottomDiv.classList.toggle('expanded');
-        bottomDiv.classList.toggle('collapsed');
-    }
-</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 <script src="/js/script.js" type="application/javascript"></script>
 
