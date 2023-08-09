@@ -14,7 +14,9 @@ type Message struct {
 	Msg    string `json:"msg"`
 }
 
-func EnterChat(room chat.IChatRoom) gin.HandlerFunc {
+var tempRoomId string = "123"
+
+func EnterChat(room *chat.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Content-Type", "text/event-stream")
 		c.Writer.Header().Set("Cache-Control", "no-cache")
@@ -22,8 +24,8 @@ func EnterChat(room chat.IChatRoom) gin.HandlerFunc {
 		c.Writer.Header().Set("Transfer-Encoding", "chunked")
 
 		//username := c.Param("user")
-		client := room.JoinRoom()
-		defer room.ExitRoom(client)
+		client := room.JoinRoom(tempRoomId)
+		defer room.ExitRoom(tempRoomId, client)
 
 		clientDone := c.Request.Context().Done()
 
@@ -39,7 +41,7 @@ func EnterChat(room chat.IChatRoom) gin.HandlerFunc {
 	}
 }
 
-func SendMessage(room chat.IChatRoom) gin.HandlerFunc {
+func SendMessage(room *chat.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		data, err := c.GetRawData()
@@ -49,14 +51,14 @@ func SendMessage(room chat.IChatRoom) gin.HandlerFunc {
 			return
 		}
 
-		room.SendMessage(string(data))
+		room.SendMessage(tempRoomId, string(data))
 		c.String(http.StatusOK, "")
 	}
 }
 
-func GetUserList(room chat.IChatRoom) gin.HandlerFunc {
+func GetUserList(room *chat.Service) gin.HandlerFunc {
 
-	//room.JoinRoom()
+	//room.joinRoom()
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"userList": []string{"AAAAA", "BLDISK", "Lavumi"},
