@@ -17,9 +17,10 @@ func InitRouter() *gin.Engine {
 	{
 		chatRouter := root.Group("/chat")
 		{
-			chatRouter.GET("/register", handler.EnterChat(chatService))
-			chatRouter.POST("/message", handler.SendMessage(chatService))
-			chatRouter.GET("/users", handler.GetUserList(chatService))
+			chatRouter.GET("/:roomId/enter", handler.EnterChat(chatService))
+			chatRouter.POST("/:roomId/message", handler.SendMessage(chatService))
+			chatRouter.GET("/:roomId/users", handler.GetUserList(chatService))
+			chatRouter.GET("/rooms", handler.GetRoomList(chatService))
 		}
 	}
 	return r

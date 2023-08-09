@@ -1,32 +1,27 @@
 package chat
 
-import (
-	"log"
-)
-
-type IChatRoom interface {
-	joinRoom(chan string)
-	exitRoom(chan string)
-	sendMessage(string)
-	closeRoom() error
-	//GetMembers() []string
-}
-
 type chatRoom struct {
-	message chan string
-	open    chan chan string
-	close   chan chan string
-	streams map[chan string]bool
+	message  chan string
+	open     chan clientInfo
+	close    chan clientInfo
+	streams  map[chan string]bool
+	users    map[string]bool
+	messages []string
 }
 
-//var chatRoom *chatRoom
+type clientInfo struct {
+	userId string
+	stream chan string
+}
 
-func makeRoom() IChatRoom {
+func makeRoom() *chatRoom {
 	room := &chatRoom{
-		message: make(chan string),
-		open:    make(chan chan string),
-		close:   make(chan chan string),
-		streams: make(map[chan string]bool),
+		message:  make(chan string),
+		open:     make(chan clientInfo),
+		close:    make(chan clientInfo),
+		streams:  make(map[chan string]bool),
+		users:    make(map[string]bool),
+		messages: make([]string, 0),
 	}
 
 	go room.listen()
@@ -34,39 +29,30 @@ func makeRoom() IChatRoom {
 	return room
 }
 
-// It Listens all incoming requests from clients.
-// Handles addition and removal of clients and broadcast messages to clients.
 func (room *chatRoom) listen() {
 	for {
 		select {
-		// Add new available client
 		case client := <-room.open:
-			room.streams[client] = true
-			log.Printf("Client added. %d registered clients", len(room.streams))
-
-		// Remove closed client
+			room.streams[client.stream] = true
+			room.users[client.userId] = true
 		case client := <-room.close:
-			delete(room.streams, client)
-			close(client)
-			log.Printf("Removed client. %d registered clients", len(room.streams))
-
-		// Broadcast message to client
+			delete(room.streams, client.stream)
+			delete(room.users, client.userId)
 		case eventMsg := <-room.message:
-			log.Printf("BroadCast Message to client. %s", eventMsg)
 			for clientMessageChan := range room.streams {
 				clientMessageChan <- eventMsg
 			}
+			room.messages = append(room.messages, eventMsg)
 		}
 	}
 }
 
-func (room *chatRoom) joinRoom(channel chan string) {
-	room.open <- channel
+func (room *chatRoom) joinRoom(client clientInfo) {
+	room.open <- client
 }
 
-func (room *chatRoom) exitRoom(clientChan chan string) {
-	log.Printf("close room registered")
-	room.close <- clientChan
+func (room *chatRoom) exitRoom(client clientInfo) {
+	room.close <- client
 }
 
 func (room *chatRoom) sendMessage(msg string) {

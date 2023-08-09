@@ -2,6 +2,12 @@
 
 let source = null;
 
+
+const enterUri = "/api/chat/123/enter";
+const msgUri = "/api/chat/123/message";
+const userUri = "/api/chat/123/user";
+// const enterUri = "";
+
 document.addEventListener('DOMContentLoaded', function () {
     checkLoginStatus();
     let elems = document.querySelectorAll('.sidenav');
@@ -35,7 +41,7 @@ const handleEnter = (event) => {
 }
 const sendMsg = () => {
     const input = document.getElementById('message');
-    fetch('/api/chat/message', {
+    fetch(msgUri, {
         method: "POST",
         credentials: 'include',
         headers: {"content-type": "application/json"},
@@ -49,7 +55,7 @@ const sendMsg = () => {
     input.value = '';
 }
 const loadUsers = () => {
-    fetch('/api/chat/users')
+    fetch(userUri)
         .then(response => {
             console.log("response : " + JSON.stringify(response));
             return response.json()
@@ -96,7 +102,12 @@ const enterChat = () => {
         return;
     }
 
-    source = new EventSource("/api/chat/register?user=" + username);
+    source = new EventSource(enterUri, {
+        headers: {
+            'Authorization': 'Bearer ' + "mytoken",
+            'UserName': username
+        }
+    });
 
     source.onerror = (e) => {
         console.log("EventSource failed", e);
@@ -147,4 +158,46 @@ const enterChat = () => {
 
     checkLoginStatus();
     loadUsers();
+}
+
+function createCard(roomName, memberInfo) {
+    const cardContainer = document.getElementById('room-div');
+
+    const cardCol = document.createElement('div');
+    cardCol.classList.add('col', 's3');
+
+    const card = document.createElement('div');
+    card.classList.add('card', 'blue', 'lighten-2', 'hoverable');
+
+    const cardContent = document.createElement('div');
+    cardContent.classList.add('card-content', 'white-text', 'unselectable');
+
+    const cardTitle = document.createElement('span');
+    cardTitle.classList.add('card-title');
+    cardTitle.textContent = roomName;
+
+    const memberInfoPara = document.createElement('p');
+    memberInfoPara.textContent = memberInfo;
+
+    cardContent.appendChild(cardTitle);
+    cardContent.appendChild(memberInfoPara);
+    card.appendChild(cardContent);
+
+
+    card.addEventListener("click", () => {
+        console.log(roomName + "clicked");
+    })
+
+    cardCol.appendChild(card);
+    cardContainer.appendChild(cardCol);
+}
+
+function toggleRoom() {
+    var topDiv = document.getElementById('room-div');
+    var bottomDiv = document.getElementById('chat-div');
+
+    topDiv.classList.toggle('expanded');
+    topDiv.classList.toggle('collapsed');
+    bottomDiv.classList.toggle('expanded');
+    bottomDiv.classList.toggle('collapsed');
 }

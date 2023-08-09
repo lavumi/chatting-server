@@ -5,24 +5,24 @@ type message struct {
 	Msg    string `json:"msg"`
 }
 
-type listener struct {
-	RoomId string
-	Chan   chan string
+type operation struct {
+	roomId string
+	clientInfo
 }
 
 type Service struct {
-	roomChannels map[string]IChatRoom
-	open         chan *listener
-	close        chan *listener
+	roomChannels map[string]*chatRoom
+	open         chan *operation
+	close        chan *operation
 	delete       chan string
 	messages     chan *message
 }
 
 func Init() *Service {
 	service := &Service{
-		roomChannels: make(map[string]IChatRoom),
-		open:         make(chan *listener, 100),
-		close:        make(chan *listener, 100),
+		roomChannels: make(map[string]*chatRoom),
+		open:         make(chan *operation, 100),
+		close:        make(chan *operation, 100),
 		delete:       make(chan string, 100),
 		messages:     make(chan *message, 100),
 	}
@@ -46,7 +46,7 @@ func (s *Service) run() {
 	}
 }
 
-func (s *Service) room(roomId string) IChatRoom {
+func (s *Service) room(roomId string) *chatRoom {
 	b, ok := s.roomChannels[roomId]
 	if !ok {
 		b = makeRoom()
@@ -55,13 +55,13 @@ func (s *Service) room(roomId string) IChatRoom {
 	return b
 }
 
-func (s *Service) register(opened *listener) {
-	s.room(opened.RoomId).joinRoom(opened.Chan)
+func (s *Service) register(opened *operation) {
+	s.room(opened.roomId).joinRoom(opened.clientInfo)
 }
 
-func (s *Service) deregister(closed *listener) {
-	s.room(closed.RoomId).exitRoom(closed.Chan)
-	close(closed.Chan)
+func (s *Service) deregister(closed *operation) {
+	s.room(closed.roomId).exitRoom(closed.clientInfo)
+	close(closed.stream)
 }
 
 func (s *Service) deleteRoom(roomId string) {
@@ -75,19 +75,25 @@ func (s *Service) deleteRoom(roomId string) {
 	}
 }
 
-func (s *Service) JoinRoom(roomId string) chan string {
-	newListener := make(chan string)
-	s.open <- &listener{
-		RoomId: roomId,
-		Chan:   newListener,
+func (s *Service) JoinRoom(roomId string, userId string) chan string {
+	stream := make(chan string)
+	s.open <- &operation{
+		roomId: roomId,
+		clientInfo: clientInfo{
+			userId: userId,
+			stream: stream,
+		},
 	}
-	return newListener
+	return stream
 }
 
-func (s *Service) ExitRoom(roomId string, closed chan string) {
-	s.close <- &listener{
-		RoomId: roomId,
-		Chan:   closed,
+func (s *Service) ExitRoom(roomId string, userId string, stream chan string) {
+	s.close <- &operation{
+		roomId: roomId,
+		clientInfo: clientInfo{
+			userId: userId,
+			stream: stream,
+		},
 	}
 }
 
@@ -101,4 +107,12 @@ func (s *Service) SendMessage(roomId string, text string) {
 		Msg:    text,
 	}
 	s.messages <- msg
+}
+
+func (s *Service) GetRoomList() []string {
+	keys := make([]string, 0, len(s.roomChannels))
+	for key := range s.roomChannels {
+		keys = append(keys, key)
+	}
+	return keys
 }
