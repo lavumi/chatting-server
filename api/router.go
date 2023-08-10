@@ -19,7 +19,7 @@ func InitRouter() *gin.Engine {
 		{
 			chatRouter.GET("/:roomId/enter", handler.EnterChat(chatService))
 			chatRouter.POST("/:roomId/message", handler.SendMessage(chatService))
-			chatRouter.GET("/:roomId/users", handler.GetUserList(chatService))
+			chatRouter.GET("/:roomId/info", handler.GetRoomInfo(chatService))
 			chatRouter.GET("/rooms", handler.GetRoomList(chatService))
 		}
 	}

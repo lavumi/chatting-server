@@ -1,99 +1,52 @@
 'use strict'
 
-let source = null;
-
-const roomUri ="/api/chat/rooms";
-const enterUri = "/api/chat/123/enter";
-const msgUri = "/api/chat/123/message";
-const userUri = "/api/chat/123/user";
-// const enterUri = "";
-
 document.addEventListener('DOMContentLoaded', function () {
-    checkLoginStatus();
+
     let elems = document.querySelectorAll('.sidenav');
     M.Sidenav.init(elems);
     var nameInputField = document.getElementById('name-input-field');
     M.CharacterCounter.init(nameInputField);
+
+    updateLoginStatus();
 });
 
 
-const checkLoginStatus = () => {
-    let enterBtn = document.getElementById("enter-chat-btn");
-    let quitBtn = document.getElementById("quit-chat-btn");
-    let chatInput = document.getElementById("chat-input");
-    let chatSend = document.getElementById("send-chat-btn");
-    if (source !== null) {
-        enterBtn.classList.add("disabled")
-        quitBtn.classList.remove("disabled")
-        chatInput.classList.remove("disabled")
-        chatSend.classList.remove("disabled")
-    } else {
-        quitBtn.classList.add("disabled")
-        chatInput.classList.add("disabled")
-        chatSend.classList.add("disabled")
-        enterBtn.classList.remove("disabled")
-    }
+const Login = () => {
+    let name = document.getElementById("name-input-field").value;
+    Chat.Register(name);
+    (async () => {
+        let roomList = await Chat.List();
+        for (const roomInfo of roomList) {
+            let name = roomInfo.name;
+            let uuid = roomInfo.uuid;
+            let desc = roomInfo.desc;
+            createCard(name, uuid, desc);
+        }
+        updateLoginStatus();
+    })();
 }
-const handleEnter = (event) => {
-    if (event.keyCode === 13) {
-        sendMsg();
-    }
-}
-const sendMsg = () => {
-    const input = document.getElementById('message');
-    fetch(msgUri, {
-        method: "POST",
-        credentials: 'include',
-        headers: {"content-type": "application/json"},
-        body: JSON.stringify(
-            {
-                sender: `${document.getElementById("name-input-field").value}`,
-                msg: input.value
-            })
-    })
-        .catch(err => console.log(err))
-    input.value = '';
-}
-const loadUsers = () => {
-    fetch(userUri)
-        .then(response => {
-            // console.log("response : " + JSON.stringify(response));
-            return response.json()
-        })
-        .then(json => {
-            const userList = document.getElementById("user-container");
-            for (let i = 0; i < json.userList.length; i++) {
-                const user = document.createElement("li")
-                user.classList.add("collection-item");
-                user.innerHTML = json.userList[i];
-                userList.appendChild(user);
-            }
-        });
-}
-const quitChat = () => {
-    source.close();
-    source = null;
-    // console.log('Chat closed');
-    checkLoginStatus();
+const QuitChat = () => {
+    Chat.Exit();
+    updateLoginStatus();
     resetChatting();
     resetUserList();
-    toggleRoom();
+    toggleRoom(true);
 }
-const resetChatting = () => {
-    const myNode = document.getElementById("chat-list");
-    while (myNode.firstChild) {
-        myNode.removeChild(myNode.lastChild);
-    }
+const SendMessage = () => {
+    const input = document.getElementById('message');
+    Chat.Send(input.value);
+    input.value = '';
 }
-const resetUserList = () => {
-    const myNode = document.getElementById("user-container");
-    while (myNode.firstChild) {
-        myNode.removeChild(myNode.lastChild);
+const HandleEnter = (event) => {
+    if (event.keyCode === 13) {
+        SendMessage();
     }
 }
 
+
 let prev_sender = "";
-const enterChat = (roomId) => {
+
+function enterChat(roomId) {
 
     // document.cookie = `user=${document.getElementById("userName").innerHTML}`;
 
@@ -102,20 +55,19 @@ const enterChat = (roomId) => {
         return;
     }
 
-    source = new EventSource(`/api/chat/${roomId}/enter`, {
-        headers: {
-            'Authorization': 'Bearer ' + "mytoken",
-            'UserName': username
+
+    Chat.Enter(roomId, (type, event) => {
+        switch (type) {
+            case 'msg':
+                messageHandler(event.data);
+                break;
+            case 'event':
+                eventHandler(event.data);
         }
-    });
+    })
 
-    source.onerror = (e) => {
-        console.log("EventSource failed", e);
-    };
-
-    source.addEventListener("info", (e) => {
-        // console.log('sse info', e.data)
-        let chatData = JSON.parse(e.data);
+    function messageHandler(data) {
+        let chatData = JSON.parse(data);
         let myCard = chatData.sender === username;
 
 
@@ -126,7 +78,7 @@ const enterChat = (roomId) => {
             prev_sender = chatData.sender;
             document.getElementById('chat-list').appendChild(namePanel);
         }
-        var cardPanel = document.createElement("div");
+        let cardPanel = document.createElement("div");
         if (myCard === true) {
             cardPanel.className = "card-panel col s8 offset-s4 right-align teal lighten-2";
         } else {
@@ -140,40 +92,52 @@ const enterChat = (roomId) => {
 
 
         document.getElementById('chat-list').appendChild(cardPanel);
+    }
 
-        // chat.innerHTML += chatData.sender + "----" + chatData.msg  + '<br>';
-
-    }, false);
-
-    source.addEventListener("oper", (e) => {
+    function eventHandler(event) {
         loadUsers();
-        console.log('sse oper', e.data)
-    }, false);
+        console.log('sse event', event.data)
+    }
 
-    checkLoginStatus();
+    updateLoginStatus();
     loadUsers();
-    toggleRoom();
+    toggleRoom(false);
+
+
+    (async () => {
+        let chatRoomInfo = await Chat.Info();
+        console.log("chatRoomInfo", chatRoomInfo);
+
+        let messageData = chatRoomInfo.messages;
+
+        for (const messageDatum of messageData) {
+            console.log(messageDatum);
+            messageHandler(messageDatum);
+        }
+
+    })();
+
 }
 
-const getRoomInfo = ()=>{
-    fetch(roomUri)
-        .then(response => {
-            // console.log("response : " + JSON.stringify(response.json()));
-            return response.json()
-        })
-        .then(json => {
-            for (let i = 0; i < json.roomList.length; i++) {
-                // const user = document.createElement("li")
-                // user.classList.add("collection-item");
-                // user.innerHTML = json.userList[i];
-                // userList.appendChild(user);
-                createCard(json.roomList[i] , "1/5");
-            }
-            checkLoginStatus();
-        });
+function loadUsers() {
+    // fetch(userUri)
+    //     .then(response => {
+    //         // console.log("response : " + JSON.stringify(response));
+    //         return response.json()
+    //     })
+    //     .then(json => {
+    //         const userList = document.getElementById("user-container");
+    //         for (let i = 0; i < json.userList.length; i++) {
+    //             const user = document.createElement("li")
+    //             user.classList.add("collection-item");
+    //             user.innerHTML = json.userList[i];
+    //             userList.appendChild(user);
+    //         }
+    //     });
 }
 
-function createCard(roomName, memberInfo) {
+
+function createCard(roomName, uuid, desc) {
     const cardContainer = document.getElementById('room-div');
 
     const cardCol = document.createElement('div');
@@ -190,28 +154,68 @@ function createCard(roomName, memberInfo) {
     cardTitle.textContent = roomName;
 
     const memberInfoPara = document.createElement('p');
-    memberInfoPara.textContent = memberInfo;
+    memberInfoPara.textContent = "Empty";
 
     cardContent.appendChild(cardTitle);
     cardContent.appendChild(memberInfoPara);
     card.appendChild(cardContent);
 
-
+    M.Tooltip.init(card, {html: desc});
     card.addEventListener("click", () => {
         // console.log(roomName + "clicked");
-        enterChat(roomName);
+        enterChat(uuid);
     })
 
     cardCol.appendChild(card);
     cardContainer.appendChild(cardCol);
 }
 
-function toggleRoom() {
-    var topDiv = document.getElementById('room-div');
-    var bottomDiv = document.getElementById('chat-div');
+function resetChatting() {
+    const myNode = document.getElementById("chat-list");
+    while (myNode.firstChild) {
+        myNode.removeChild(myNode.lastChild);
+    }
+}
 
-    topDiv.classList.toggle('expanded');
-    topDiv.classList.toggle('collapsed');
-    bottomDiv.classList.toggle('expanded');
-    bottomDiv.classList.toggle('collapsed');
+function resetUserList() {
+    const myNode = document.getElementById("user-container");
+    while (myNode.firstChild) {
+        myNode.removeChild(myNode.lastChild);
+    }
+}
+
+function updateLoginStatus() {
+    let enterBtn = document.getElementById("enter-chat-btn");
+    let quitBtn = document.getElementById("quit-chat-btn");
+    let chatInput = document.getElementById("chat-input");
+    let chatSend = document.getElementById("send-chat-btn");
+    if (source !== null) {
+        enterBtn.classList.add("disabled")
+        quitBtn.classList.remove("disabled")
+        chatInput.classList.remove("disabled")
+        chatSend.classList.remove("disabled")
+    } else {
+        quitBtn.classList.add("disabled")
+        chatInput.classList.add("disabled")
+        chatSend.classList.add("disabled")
+        enterBtn.classList.remove("disabled")
+    }
+}
+
+function toggleRoom(isRoom) {
+    let room = document.getElementById('room-div');
+    let chat = document.getElementById('chat-div');
+
+
+    if (isRoom === true) {
+        room.classList.add('expanded');
+        room.classList.remove('collapsed');
+        chat.classList.add('collapsed');
+        chat.classList.remove('expanded');
+    } else {
+        room.classList.remove('expanded');
+        room.classList.add('collapsed');
+        chat.classList.remove('collapsed');
+        chat.classList.add('expanded');
+    }
 }

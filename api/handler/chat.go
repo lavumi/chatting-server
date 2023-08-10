@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-type RoomInfo struct {
+type ReqRoomUri struct {
 	RoomId string `uri:"roomId" binding:"required"`
 }
 
@@ -22,21 +22,21 @@ func EnterChat(room *chat.Service) gin.HandlerFunc {
 
 		userId := c.GetHeader("UserName")
 
-		var roomInfo RoomInfo
-		if err := c.ShouldBindUri(&roomInfo); err != nil {
+		var roomUri ReqRoomUri
+		if err := c.ShouldBindUri(&roomUri); err != nil {
 			c.JSON(400, gin.H{"msg": err})
 			return
 		}
 
-		client := room.JoinRoom(roomInfo.RoomId, userId)
-		defer room.ExitRoom(roomInfo.RoomId, userId, client)
+		client := room.JoinRoom(roomUri.RoomId, userId)
+		defer room.ExitRoom(roomUri.RoomId, userId, client)
 		clientDone := c.Request.Context().Done()
 		c.Stream(func(w io.Writer) bool {
 			select {
 			case <-clientDone:
 				return false
 			case message := <-client:
-				c.SSEvent("info", message)
+				c.SSEvent("msg", message)
 				return true
 			}
 		})
@@ -46,12 +46,13 @@ func EnterChat(room *chat.Service) gin.HandlerFunc {
 func SendMessage(room *chat.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		var roomInfo RoomInfo
-		if err := c.ShouldBindUri(&roomInfo); err != nil {
+		var roomUri ReqRoomUri
+		if err := c.ShouldBindUri(&roomUri); err != nil {
 			c.JSON(400, gin.H{"msg": err})
 			return
 		}
 
+		userId := c.GetHeader("UserName")
 		data, err := c.GetRawData()
 		if err != nil {
 			log.Printf("bind json Error: %s", err.Error())
@@ -59,33 +60,30 @@ func SendMessage(room *chat.Service) gin.HandlerFunc {
 			return
 		}
 
-		room.SendMessage(roomInfo.RoomId, string(data))
+		room.SendMessage(roomUri.RoomId, userId, string(data))
 		c.String(http.StatusOK, "")
 	}
 }
 
 func GetRoomList(room *chat.Service) gin.HandlerFunc {
-
-	//roomList := room.GetRoomList()
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"roomList": []string{"123", "chat", "test"},
+			"roomList": room.GetRoomList(),
 		})
 	}
 }
 
-func GetUserList(room *chat.Service) gin.HandlerFunc {
+func GetRoomInfo(room *chat.Service) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-
-		var roomInfo RoomInfo
-		if err := c.ShouldBindUri(&roomInfo); err != nil {
+		var roomUri ReqRoomUri
+		if err := c.ShouldBindUri(&roomUri); err != nil {
 			c.JSON(400, gin.H{"msg": err})
 			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"userList": []string{"aaa", "bbb", "ccc"},
+			"roomInfo": room.GetRoomInfo(roomUri.RoomId),
 		})
 	}
 }

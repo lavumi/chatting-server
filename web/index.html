@@ -52,12 +52,12 @@
                 </div>
             </li>
             <li style="margin: 0 10px;">
-                <button id="enter-chat-btn" type="button" class="btn waves-effect waves-light" onclick="getRoomInfo()">
+                <button id="enter-chat-btn" type="button" class="btn waves-effect waves-light" onclick="Login()">
                     Enter chat
                 </button>
             </li>
             <li style="margin: 0 10px;">
-                <button id="quit-chat-btn" type="button" class="btn waves-effect waves-light red" onclick="quitChat()">
+                <button id="quit-chat-btn" type="button" class="btn waves-effect waves-light red" onclick="QuitChat()">
                     Quit chat
                 </button>
             </li>
@@ -86,11 +86,11 @@
         <div id="input-group" class="row">
             <div class="col s12">
                 <div id="chat-input" class="input-field">
-                    <input id="message" type="text" class="validate" onkeydown="handleEnter(event)">
+                    <input id="message" type="text" class="validate" onkeydown="HandleEnter(event)">
                     <label for="message">Type a message...</label>
                 </div>
                 <button id="send-chat-btn" class="btn waves-effect waves-light" style="background-color: #26a69a;"
-                        onclick="sendMsg()">Send
+                        onclick="SendMessage()">Send
                     <i class="material-icons right">send</i>
                 </button>
             </div>
@@ -98,7 +98,10 @@
     </div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<!--script src="/js/chat.min.js" type="application/javascript"></script-->
 <script src="/js/script.js" type="application/javascript"></script>
+<script src="/js/netHandler.js" type="application/javascript"></script>
 
+</script>
 </body>
 </html>
