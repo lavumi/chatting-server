@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var nameInputField = document.getElementById('name-input-field');
     M.CharacterCounter.init(nameInputField);
 
-    updateLoginStatus();
+    updateLoginStatus(false);
 });
 
 
@@ -20,21 +20,24 @@ const Login = () => {
             let name = roomInfo.name;
             let uuid = roomInfo.uuid;
             let desc = roomInfo.desc;
-            createCard(name, uuid, desc);
+            createRoomCard(name, uuid, desc);
         }
-        updateLoginStatus();
+        updateLoginStatus(true);
     })();
 }
 const QuitChat = () => {
     Chat.Exit();
-    updateLoginStatus();
+    updateLoginStatus(false);
+    resetRoomList();
     resetChatting();
     resetUserList();
-    toggleRoom(true);
+    // toggleRoom(true);
 }
 const SendMessage = () => {
     const input = document.getElementById('message');
-    Chat.Send(input.value);
+
+    if (input.value.trim().length !== 0)
+        Chat.Send(input.value);
     input.value = '';
 }
 const HandleEnter = (event) => {
@@ -47,8 +50,6 @@ const HandleEnter = (event) => {
 let prev_sender = "";
 
 function enterChat(roomId) {
-
-    // document.cookie = `user=${document.getElementById("userName").innerHTML}`;
 
     let username = `${document.getElementById("name-input-field").value}`;
     if (username.length === 0) {
@@ -69,29 +70,43 @@ function enterChat(roomId) {
     function messageHandler(data) {
         let chatData = JSON.parse(data);
         let myCard = chatData.sender === username;
+        let continueTalking = prev_sender === chatData.sender;
+        prev_sender = chatData.sender;
 
 
-        if (myCard === false && prev_sender !== chatData.sender) {
+        if (continueTalking === true) {
+            let lastChatPanel = document.getElementById('chat-list').lastElementChild;
+            let lastChatContextCard = lastChatPanel.lastElementChild;
+            lastChatContextCard.innerText += "\n" + chatData.msg;
+            document.getElementById('chat-list').scrollIntoView(false);
+            return;
+        }
+
+        let chatPanel = document.createElement("div");
+        let chatContextCard = document.createElement("div");
+
+
+        chatPanel.style.marginTop = "10px";
+        if (myCard === true) {
+            chatPanel.className = "col s8 offset-s4 my-chat-panel";
+            chatContextCard.className = "card-panel small left-align teal lighten-2 chat-box";
+        } else {
             let namePanel = document.createElement("div");
             namePanel.className = "chat-user";
             namePanel.innerHTML = chatData.sender;
-            prev_sender = chatData.sender;
-            document.getElementById('chat-list').appendChild(namePanel);
-        }
-        let cardPanel = document.createElement("div");
-        if (myCard === true) {
-            cardPanel.className = "card-panel col s8 offset-s4 right-align teal lighten-2";
-        } else {
-            cardPanel.className = "card-panel col s8 left-align orange lighten-4";
+            chatPanel.appendChild(namePanel);
+            chatPanel.className = "col s8 left-align";
+            chatContextCard.className = "card-panel small left-align orange lighten-4 chat-box";
         }
 
-        cardPanel.style.borderRadius = "15px";
-        cardPanel.innerText = chatData.msg;
-        cardPanel.style.padding = "10px";
-        cardPanel.style.marginBottom = "2px";
+        chatContextCard.innerText = chatData.msg;
 
+        chatPanel.appendChild(chatContextCard);
 
-        document.getElementById('chat-list').appendChild(cardPanel);
+        let chatList = document.getElementById('chat-list');
+        chatList.appendChild(chatPanel);
+
+        document.getElementById('chat-list').scrollIntoView(false);
     }
 
     function eventHandler(event) {
@@ -99,22 +114,15 @@ function enterChat(roomId) {
         console.log('sse event', event.data)
     }
 
-    updateLoginStatus();
-    loadUsers();
-    toggleRoom(false);
+    resetChatting();
 
 
     (async () => {
         let chatRoomInfo = await Chat.Info();
-        console.log("chatRoomInfo", chatRoomInfo);
-
         let messageData = chatRoomInfo.messages;
-
         for (const messageDatum of messageData) {
-            console.log(messageDatum);
             messageHandler(messageDatum);
         }
-
     })();
 
 }
@@ -136,31 +144,34 @@ function loadUsers() {
     //     });
 }
 
-
-function createCard(roomName, uuid, desc) {
+function createRoomCard(roomName, uuid, desc) {
     const cardContainer = document.getElementById('room-div');
 
     const cardCol = document.createElement('div');
-    cardCol.classList.add('col', 's3');
+    // cardCol.classList.add('col', 's3');
 
     const card = document.createElement('div');
-    card.classList.add('card', 'blue', 'lighten-2', 'hoverable');
-
-    const cardContent = document.createElement('div');
-    cardContent.classList.add('card-content', 'white-text', 'unselectable');
-
+    card.classList.add('card-panel', 'blue', 'lighten-2', 'hoverable');
     const cardTitle = document.createElement('span');
-    cardTitle.classList.add('card-title');
+    cardTitle.classList.add('white-text');
     cardTitle.textContent = roomName;
+    card.appendChild(cardTitle);
 
-    const memberInfoPara = document.createElement('p');
-    memberInfoPara.textContent = "Empty";
+    // const cardContent = document.createElement('div');
+    // cardContent.classList.add('card-content', 'white-text', 'unselectable');
+    //
+    // const cardTitle = document.createElement('span');
+    // cardTitle.classList.add('card-title');
+    // cardTitle.textContent = roomName;
 
-    cardContent.appendChild(cardTitle);
-    cardContent.appendChild(memberInfoPara);
-    card.appendChild(cardContent);
+    // const memberInfoPara = document.createElement('p');
+    // memberInfoPara.textContent = "Empty";
 
-    M.Tooltip.init(card, {html: desc});
+    // cardContent.appendChild(cardTitle);
+    // cardContent.appendChild(memberInfoPara);
+    // card.appendChild(cardContent);
+
+    M.Tooltip.init(card, {html: desc, position: "right"});
     card.addEventListener("click", () => {
         // console.log(roomName + "clicked");
         enterChat(uuid);
@@ -168,6 +179,14 @@ function createCard(roomName, uuid, desc) {
 
     cardCol.appendChild(card);
     cardContainer.appendChild(cardCol);
+}
+
+
+function resetRoomList() {
+    const myNode = document.getElementById('room-div');
+    while (myNode.firstChild) {
+        myNode.removeChild(myNode.lastChild);
+    }
 }
 
 function resetChatting() {
@@ -178,27 +197,39 @@ function resetChatting() {
 }
 
 function resetUserList() {
-    const myNode = document.getElementById("user-container");
-    while (myNode.firstChild) {
-        myNode.removeChild(myNode.lastChild);
-    }
+    // const myNode = document.getElementById("user-container");
+    // while (myNode.firstChild) {
+    //     myNode.removeChild(myNode.lastChild);
+    // }
 }
 
-function updateLoginStatus() {
+function updateLoginStatus(loggedIn) {
     let enterBtn = document.getElementById("enter-chat-btn");
     let quitBtn = document.getElementById("quit-chat-btn");
     let chatInput = document.getElementById("chat-input");
     let chatSend = document.getElementById("send-chat-btn");
-    if (source !== null) {
+    let nameField = document.getElementById("name-input-field");
+    let chatField = document.getElementById("chat-input");
+    if (loggedIn) {
         enterBtn.classList.add("disabled")
+        nameField.classList.add("disabled")
+
         quitBtn.classList.remove("disabled")
         chatInput.classList.remove("disabled")
         chatSend.classList.remove("disabled")
+
+        chatField.classList.remove("disabled")
     } else {
         quitBtn.classList.add("disabled")
         chatInput.classList.add("disabled")
         chatSend.classList.add("disabled")
+
+        chatField.classList.add("disabled")
+
+
         enterBtn.classList.remove("disabled")
+        nameField.classList.remove("disabled")
+
     }
 }
 

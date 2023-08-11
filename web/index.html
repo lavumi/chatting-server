@@ -18,6 +18,23 @@
             }
         }
 
+        .top-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #chat-room-label {
+            text-align: left;
+            font-size: 24px;
+            color: #fff;
+            margin-left: 10px;
+        }
+
+        #chat-list {
+            margin-bottom: 0;
+        }
+
         .expanded {
             height: calc(100vh - 65px);
             transition: height 0.5s;
@@ -34,14 +51,29 @@
             user-select: none;
         }
 
+        .chat-box {
+            padding: 10px;
+            margin: 0;
+            width: fit-content;
+            /*display: flex;*/
+            /*flex-direction: column;*/
+            /*align-items: flex-start;*/
+        }
+
+        .my-chat-panel {
+            display: flex;
+            justify-content: flex-end;
+        }
+
     </style>
 </head>
 <body>
 <header>
     <nav class="top-nav">
         <a href="#" data-target="nav-mobile" class="top-nav sidenav-trigger full hide-on-large-only">
-            <i class="material-icons">menu</i>
+            <i class="material-icons" style="margin-right: 10px;">menu</i>
         </a>
+        <span id="chat-room-label" style="text-align: center; flex-grow: 1;">Chat Room</span>
     </nav>
     <div id="nav-mobile" class="sidenav sidenav-fixed" style="transform: translateX(-105%);">
         <ul id="login-form">
@@ -62,23 +94,15 @@
                 </button>
             </li>
         </ul>
-        <div id="user-list" class="card">
-            <div class="card-content">
-                <span class="card-title">User List</span>
-                <ul id="user-container" class="collection">
-                </ul>
-            </div>
-        </div>
+        <div id="room-div" class="row card-container">
 
+        </div>
 
     </div>
 
 </header>
 <main>
-    <div id="room-div" class="row card-container expanded">
-
-    </div>
-    <div id="chat-div" class="container collapsed">
+    <div id="chat-div" class="container expanded">
         <div id="chat-content" style="height: calc(95vh - 150px); overflow-y: auto;">
             <div id="chat-list" class="row">
             </div>

@@ -1,7 +1,5 @@
 package chat
 
-import "log"
-
 type room struct {
 	message chan string
 	open    chan client
@@ -47,7 +45,7 @@ func (r *room) listen() {
 				clientMessageChan <- eventMsg
 			}
 			r.info.Messages = append(r.info.Messages, eventMsg)
-			log.Printf("message size : %d", len(r.info.Messages))
+			//log.Printf("message size : %d", len(r.info.Messages))
 		}
 	}
 }
