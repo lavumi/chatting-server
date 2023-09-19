@@ -1,6 +1,6 @@
-# HTTP2 GameServer
+# HTTP2 Chatting Server
 
-Http2 game-server made by gin
+Http2 chat-server made by gin
 
 
 
